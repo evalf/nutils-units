@@ -1,0 +1,18 @@
+[project]
+name = "nutils-units"
+readme = "README.md"
+authors = [
+    { name = "Evalf", email = "info@evalf.com" },
+]
+requires-python = '>=3.10'
+description = "Nutils Units: object wrappers for dimensional computations"
+license = "MIT AND (Apache-2.0 OR BSD-2-Clause)"
+dynamic = ["version"]
+classifiers = [
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "nutils.units.__version__"}
+readme = {file = ["README"]}
