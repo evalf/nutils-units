@@ -103,6 +103,7 @@ class Monomial:
     @__table.register("numpy.positive")
     @__table.register("numpy.ptp")
     @__table.register("numpy.real")
+    @__table.register("numpy.repeat")
     @__table.register("numpy.reshape")
     @__table.register("numpy.sum")
     @__table.register("numpy.take")
