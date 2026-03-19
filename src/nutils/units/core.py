@@ -115,7 +115,7 @@ class Monomial:
     def __unary(op, *args, **kwargs):
         cls, (arg0, dim0) = _unwrap(args[0])
         val = op(arg0, *args[1:], **kwargs)
-        return cls(val, dim0)
+        return wrap(cls, val, dim0)
 
     @__table.register("numpy.add")
     @__table.register("numpy.hypot")
@@ -132,7 +132,7 @@ class Monomial:
                 f"incompatible dimensions for {op.__name__}: {dim0}, {dim1}"
             )
         val = op(arg0, arg1, *args[2:], **kwargs)
-        return cls(val, dim0)
+        return wrap(cls, val, dim0)
 
     @__table.register("numpy.matmul")
     @__table.register("numpy.multiply")
@@ -164,7 +164,7 @@ class Monomial:
     def __sqrt(op, *args, **kwargs):
         cls, (arg0, dim0) = _unwrap(args[0])
         val = op(arg0, *args[1:], **kwargs)
-        return cls(val, dim0 / 2)
+        return wrap(cls, val, dim0 / 2)
 
     @__table.register("_operator.setitem")
     def __setitem(op, *args, **kwargs):
@@ -172,7 +172,7 @@ class Monomial:
         if dim0 != dim2:
             raise DimensionError(f"cannot assign {dim2} to {dim0}")
         val = op(arg0, args[1], arg2, *args[3:], **kwargs)
-        return cls(val, dim0)
+        return wrap(cls, val, dim0)
 
     @__table.register("nutils.function.jacobian")
     @__table.register("numpy.power")
@@ -225,19 +225,19 @@ class Monomial:
                 + ", ".join(map(str, dims))
             )
         val = op(arg0, *args[1:], **kwargs)
-        return cls(val, dim)
+        return wrap(cls, val, dim)
 
     @__table.register("nutils.function.curvature")
     def __evaluate(op, *args, **kwargs):
         cls, (arg0, dim0) = _unwrap(args[0])
         val = op(*args, **kwargs)
-        return cls(val, -dim0)
+        return wrap(cls, val, -dim0)
 
     @__table.register("nutils.function.evaluate")
     def __evaluate(op, *args, **kwargs):
-        cls, args, dims = _unwrap_many(args)
+        cls, args, dims = zip(*map(_unwrap, args))
         vals = op(*args, **kwargs)
-        return tuple(map(cls, vals, dims))
+        return tuple(map(wrap, cls, vals, dims))
 
     @__table.register("nutils.function.field")
     def __field(op, *args, **kwargs):
@@ -245,7 +245,7 @@ class Monomial:
         val = op(*args, **kwargs)
         dim = reduce(operator.add, dims)
         # we abuse the fact that unpack str returns dimensionless
-        return cls(val, dim)
+        return wrap(cls, val, dim)
 
     @__table.register("nutils.function.arguments_for")
     def __attribute(op, *args, **kwargs):
@@ -260,7 +260,7 @@ class Monomial:
                 f"incompatible dimensions for {op.__name__}: {dimx}, {dimxp}"
             )
         val = op(x, xp, fp, *args, **kwargs)
-        return cls(val, dimfp)
+        return wrap(cls, val, dimfp)
 
     @__table.register("nutils.topology.Topology.locate")
     def __locate(
@@ -306,14 +306,14 @@ class Monomial:
     def __sample(op, sample, func):
         cls, (func, dim) = _unwrap(func)
         val = op(sample, func)
-        return cls(val, dim)
+        return wrap(cls, val, dim)
 
     @__table.register("numpy.linalg.det")
     def __det(op, arg):
         cls, (arg, dim) = _unwrap(arg)
         val = op(arg)
         dim = dim * arg.ndim
-        return cls(val, dim)
+        return wrap(cls, val, dim)
 
     ## DEFINE OPERATORS
 
