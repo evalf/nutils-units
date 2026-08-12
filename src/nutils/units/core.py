@@ -105,6 +105,7 @@ class Monomial:
     @__table.register("numpy.real")
     @__table.register("numpy.repeat")
     @__table.register("numpy.reshape")
+    @__table.register("numpy.ravel")
     @__table.register("numpy.sum")
     @__table.register("numpy.take")
     @__table.register("numpy.trace")

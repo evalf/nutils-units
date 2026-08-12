@@ -309,6 +309,17 @@ class UMonomial(TestCase):
         self.assertEqual(F23[1, 1], parse("5N"))
         self.assertEqual(F23[1, 2], parse("6N"))
 
+    def test_ravel(self):
+        F32 = numpy.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]) * units.N
+        F6 = numpy.ravel(F32)
+        self.assertEqual(numpy.shape(F6), (6,))
+        self.assertEqual(F6[0], parse("1N"))
+        self.assertEqual(F6[1], parse("2N"))
+        self.assertEqual(F6[2], parse("3N"))
+        self.assertEqual(F6[3], parse("4N"))
+        self.assertEqual(F6[4], parse("5N"))
+        self.assertEqual(F6[5], parse("6N"))
+
     def test_norm(self):
         F = numpy.array([3.0, 4.0]) * units.N
         Fnorm = numpy.linalg.norm(F, axis=0)
