@@ -334,6 +334,19 @@ class UMonomial(TestCase):
         self.assertEqual(f[0], parse("11N"))
         self.assertEqual(f[1], parse("12N"))
 
+    def test_linspace(self):
+        start = 2.0 * units.m
+        stop = 5.0 * units.km
+        num = 9
+        samples = numpy.linspace(start, stop, num)
+        self.assertEqual(len(samples), num)
+        self.assertEqual(samples[0], start)
+        self.assertEqual(samples[num // 2], 0.5 * start + 0.5 * stop)
+        self.assertEqual(samples[-1], stop)
+        samples_, step = numpy.linspace(start, stop, num, retstep=True)
+        self.assertTrue((samples == samples_).all())
+        self.assertEqual(step, (stop - start) / (num - 1))
+
 
 class Dimension(TestCase):
     def test_multiply(self):

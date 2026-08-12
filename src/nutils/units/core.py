@@ -339,6 +339,22 @@ class Monomial:
         dim = dim * arg.ndim
         return wrap(cls, val, dim)
 
+    @__table.register("numpy.linspace")
+    def __linspace(
+        op, start, stop, num=50, endpoint=True, retstep=False, *args, **kwargs
+    ):
+        cls = _get_monomial_class(start, stop)
+        start, dim = unwrap(start)
+        stop, dim_ = unwrap(stop)
+        if dim != dim_:
+            raise DimensionError(f"incompatible dimensions for linspace: {dim}, {dim_}")
+        samples = op(start, stop, num, endpoint, retstep, *args, **kwargs)
+        if retstep:
+            samples, step = samples
+            return wrap(cls, samples, dim), wrap(cls, step, dim)
+        else:
+            return wrap(cls, samples, dim)
+
     ## DEFINE OPERATORS
 
     __getitem__ = __table.bind_method(operator.getitem)
