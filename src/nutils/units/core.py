@@ -297,20 +297,22 @@ class Monomial:
     ):
         geom, dimgeom = unwrap(geom)
         coords, dimcoords = unwrap(coords)
-        tol, dimtol = unwrap(tol)
-        maxdist, dimmaxdist = unwrap(maxdist)
         if dimgeom != dimcoords:
             raise DimensionError(
                 f"incompatible dimensions for locate: {dimgeom}, {dimcoords}"
             )
-        if (dimtol or tol is not None) and dimtol != dimgeom:
-            raise DimensionError(
-                f"invalid dimension for tol: got {dimtol}, expected {dimgeom}"
-            )
-        if (dimmaxdist or maxdist is not None) and dimmaxdist != dimgeom:
-            raise DimensionError(
-                f"invalid dimension for maxdist: got {dimmaxdist}, expected {dimgeom}"
-            )
+        if tol != 0:
+            tol, dimtol = unwrap(tol)
+            if dimtol != dimgeom:
+                raise DimensionError(
+                    f"invalid dimension for tol: got {dimtol}, expected {dimgeom}"
+                )
+        if maxdist is not None:
+            maxdist, dimmaxdist = unwrap(maxdist)
+            if dimmaxdist != dimgeom:
+                raise DimensionError(
+                    f"invalid dimension for maxdist: got {dimmaxdist}, expected {dimgeom}"
+                )
         return op(
             topo,
             geom,
