@@ -347,6 +347,17 @@ class UMonomial(TestCase):
         self.assertTrue((samples == samples_).all())
         self.assertEqual(step, (stop - start) / (num - 1))
 
+    def test_meshgrid(self):
+        x, t = numpy.meshgrid(
+            numpy.array([1, 2, 4]) * units.m, numpy.array([10, 20]) * units.s
+        )
+        self.assertEqual(numpy.shape(x), (2, 3))
+        self.assertTrue((x == numpy.array([[1, 2, 4], [1, 2, 4]]) * units.m).all())
+        self.assertEqual(numpy.shape(t), (2, 3))
+        self.assertTrue(
+            (t == numpy.array([[10, 10, 10], [20, 20, 20]]) * units.s).all()
+        )
+
 
 class Dimension(TestCase):
     def test_multiply(self):

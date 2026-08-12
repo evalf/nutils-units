@@ -355,6 +355,13 @@ class Monomial:
         else:
             return wrap(cls, samples, dim)
 
+    @__table.register("numpy.meshgrid")
+    def __meshgrid(op, *xi, **kwargs):
+        cls = _get_monomial_class(*xi)
+        xi, dims = zip(*map(unwrap, xi))
+        arrays = op(*xi, **kwargs)
+        return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
+
     ## DEFINE OPERATORS
 
     __getitem__ = __table.bind_method(operator.getitem)
