@@ -309,6 +309,17 @@ class UMonomial(TestCase):
         self.assertEqual(F23[1, 1], parse("5N"))
         self.assertEqual(F23[1, 2], parse("6N"))
 
+    def test_ravel(self):
+        F32 = numpy.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]) * units.N
+        F6 = numpy.ravel(F32)
+        self.assertEqual(numpy.shape(F6), (6,))
+        self.assertEqual(F6[0], parse("1N"))
+        self.assertEqual(F6[1], parse("2N"))
+        self.assertEqual(F6[2], parse("3N"))
+        self.assertEqual(F6[3], parse("4N"))
+        self.assertEqual(F6[4], parse("5N"))
+        self.assertEqual(F6[5], parse("6N"))
+
     def test_norm(self):
         F = numpy.array([3.0, 4.0]) * units.N
         Fnorm = numpy.linalg.norm(F, axis=0)
@@ -322,6 +333,30 @@ class UMonomial(TestCase):
         self.assertEqual(numpy.shape(f), (2,))
         self.assertEqual(f[0], parse("11N"))
         self.assertEqual(f[1], parse("12N"))
+
+    def test_linspace(self):
+        start = 2.0 * units.m
+        stop = 5.0 * units.km
+        num = 9
+        samples = numpy.linspace(start, stop, num)
+        self.assertEqual(len(samples), num)
+        self.assertEqual(samples[0], start)
+        self.assertEqual(samples[num // 2], 0.5 * start + 0.5 * stop)
+        self.assertEqual(samples[-1], stop)
+        samples_, step = numpy.linspace(start, stop, num, retstep=True)
+        self.assertTrue((samples == samples_).all())
+        self.assertEqual(step, (stop - start) / (num - 1))
+
+    def test_meshgrid(self):
+        x, t = numpy.meshgrid(
+            numpy.array([1, 2, 4]) * units.m, numpy.array([10, 20]) * units.s
+        )
+        self.assertEqual(numpy.shape(x), (2, 3))
+        self.assertTrue((x == numpy.array([[1, 2, 4], [1, 2, 4]]) * units.m).all())
+        self.assertEqual(numpy.shape(t), (2, 3))
+        self.assertTrue(
+            (t == numpy.array([[10, 10, 10], [20, 20, 20]]) * units.s).all()
+        )
 
 
 class Dimension(TestCase):
@@ -357,7 +392,7 @@ class Quantity(TestCase):
 
     def test_bad(self):
         with self.assertRaisesRegex(DimensionError, "cannot parse 2kg as L/T"):
-            v = Velocity("2kg")
+            Velocity("2kg")
 
     def test_pickle(self):
         v = Velocity("2m/s")

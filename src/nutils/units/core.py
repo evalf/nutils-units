@@ -105,6 +105,7 @@ class Monomial:
     @__table.register("numpy.real")
     @__table.register("numpy.repeat")
     @__table.register("numpy.reshape")
+    @__table.register("numpy.ravel")
     @__table.register("numpy.sum")
     @__table.register("numpy.take")
     @__table.register("numpy.trace")
@@ -297,20 +298,22 @@ class Monomial:
     ):
         geom, dimgeom = unwrap(geom)
         coords, dimcoords = unwrap(coords)
-        tol, dimtol = unwrap(tol)
-        maxdist, dimmaxdist = unwrap(maxdist)
         if dimgeom != dimcoords:
             raise DimensionError(
                 f"incompatible dimensions for locate: {dimgeom}, {dimcoords}"
             )
-        if (dimtol or tol is not None) and dimtol != dimgeom:
-            raise DimensionError(
-                f"invalid dimension for tol: got {dimtol}, expected {dimgeom}"
-            )
-        if (dimmaxdist or maxdist is not None) and dimmaxdist != dimgeom:
-            raise DimensionError(
-                f"invalid dimension for maxdist: got {dimmaxdist}, expected {dimgeom}"
-            )
+        if tol != 0:
+            tol, dimtol = unwrap(tol)
+            if dimtol != dimgeom:
+                raise DimensionError(
+                    f"invalid dimension for tol: got {dimtol}, expected {dimgeom}"
+                )
+        if maxdist is not None:
+            maxdist, dimmaxdist = unwrap(maxdist)
+            if dimmaxdist != dimgeom:
+                raise DimensionError(
+                    f"invalid dimension for maxdist: got {dimmaxdist}, expected {dimgeom}"
+                )
         return op(
             topo,
             geom,
@@ -335,6 +338,29 @@ class Monomial:
         val = op(arg)
         dim = dim * arg.ndim
         return wrap(cls, val, dim)
+
+    @__table.register("numpy.linspace")
+    def __linspace(
+        op, start, stop, num=50, endpoint=True, retstep=False, *args, **kwargs
+    ):
+        cls = _get_monomial_class(start, stop)
+        start, dim = unwrap(start)
+        stop, dim_ = unwrap(stop)
+        if dim != dim_:
+            raise DimensionError(f"incompatible dimensions for linspace: {dim}, {dim_}")
+        samples = op(start, stop, num, endpoint, retstep, *args, **kwargs)
+        if retstep:
+            samples, step = samples
+            return wrap(cls, samples, dim), wrap(cls, step, dim)
+        else:
+            return wrap(cls, samples, dim)
+
+    @__table.register("numpy.meshgrid")
+    def __meshgrid(op, *xi, **kwargs):
+        cls = _get_monomial_class(*xi)
+        xi, dims = zip(*map(unwrap, xi))
+        arrays = op(*xi, **kwargs)
+        return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
 
     ## DEFINE OPERATORS
 
@@ -379,12 +405,12 @@ def unwrap(obj):
 
 
 def _get_monomial_class(*args):
-    '''Return common Monomial base class.
+    """Return common Monomial base class.
 
     This helper function returns the highest subclass of which all monomial
     arguments are an instance. Concretely, if one argument is a Monomial and
     the other a UMonomial, then Monomial is returned. If all are UMonomial then
-    the return value is UMonomial.'''
+    the return value is UMonomial."""
 
     types = {type(arg) for arg in args if isinstance(arg, Monomial)}
     bases = _collect_bases(types.pop())
