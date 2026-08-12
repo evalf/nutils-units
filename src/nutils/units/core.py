@@ -379,12 +379,12 @@ def unwrap(obj):
 
 
 def _get_monomial_class(*args):
-    '''Return common Monomial base class.
+    """Return common Monomial base class.
 
     This helper function returns the highest subclass of which all monomial
     arguments are an instance. Concretely, if one argument is a Monomial and
     the other a UMonomial, then Monomial is returned. If all are UMonomial then
-    the return value is UMonomial.'''
+    the return value is UMonomial."""
 
     types = {type(arg) for arg in args if isinstance(arg, Monomial)}
     bases = _collect_bases(types.pop())

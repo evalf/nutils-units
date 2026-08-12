@@ -357,7 +357,7 @@ class Quantity(TestCase):
 
     def test_bad(self):
         with self.assertRaisesRegex(DimensionError, "cannot parse 2kg as L/T"):
-            v = Velocity("2kg")
+            Velocity("2kg")
 
     def test_pickle(self):
         v = Velocity("2m/s")
