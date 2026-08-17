@@ -272,6 +272,15 @@ class Monomial:
         args = [unwrap(arg)[0] for arg in args]
         return op(*args, **kwargs)
 
+    @__table.register("nutils.function.partition")
+    def __partition(op, f, *levels):
+        f, dim = unwrap(f)
+        levels, level_dims = zip(*map(unwrap, levels))
+        for level_dim in level_dims:
+            if level_dim != dim:
+                raise DimensionError(f"incompatible dimensions for function.partition: {level_dim} != {dim}")
+        return op(f, *levels)
+
     @__table.register("numpy.interp")
     def __interp(op, x, xp, fp, *args, **kwargs):
         cls = _get_monomial_class(x, xp, fp)
