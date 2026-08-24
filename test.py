@@ -358,6 +358,16 @@ class UMonomial(TestCase):
             (t == numpy.array([[10, 10, 10], [20, 20, 20]]) * units.s).all()
         )
 
+    def test_nan_to_num(self):
+        a = numpy.array([1.5, numpy.nan, numpy.inf, -numpy.inf]) * units.m
+        b = numpy.nan_to_num(a, nan=Length("4m"))
+        self.assertEqual(b[0], Length("1.5m"))
+        self.assertEqual(b[1], Length("4m"))
+        c = numpy.nan_to_num(a, nan=Length("5m"), posinf=Length("10m"), neginf=Length("-8m"))
+        self.assertEqual(c[1], Length("5m"))
+        self.assertEqual(c[2], Length("10m"))
+        self.assertEqual(c[3], Length("-8m"))
+
 
 class Dimension(TestCase):
     def test_multiply(self):

@@ -272,6 +272,15 @@ class Monomial:
         args = [unwrap(arg)[0] for arg in args]
         return op(*args, **kwargs)
 
+    @__table.register("nutils.function.partition")
+    def __partition(op, f, *levels):
+        f, dim = unwrap(f)
+        levels, level_dims = zip(*map(unwrap, levels))
+        for level_dim in level_dims:
+            if level_dim != dim:
+                raise DimensionError(f"incompatible dimensions for function.partition: {level_dim} != {dim}")
+        return op(f, *levels)
+
     @__table.register("numpy.interp")
     def __interp(op, x, xp, fp, *args, **kwargs):
         cls = _get_monomial_class(x, xp, fp)
@@ -361,6 +370,30 @@ class Monomial:
         xi, dims = zip(*map(unwrap, xi))
         arrays = op(*xi, **kwargs)
         return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
+
+    @__table.register("numpy.nan_to_num")
+    def __nan_to_num(op, x, copy=True, nan=0.0, posinf=None, neginf=None):
+        cls = _get_monomial_class(x, nan, posinf, neginf)
+        x, dim = unwrap(x)
+        nan, nan_dim = unwrap(nan)
+        if nan_dim != dim:
+            raise DimensionError(
+                f"in nan_to_num: incompatible dimension for nan argument: {nan_dim} != {dim}"
+            )
+        if posinf is not None:
+            posinf, posinf_dim = unwrap(posinf)
+            if posinf_dim != dim:
+                raise DimensionError(
+                    f"in nan_to_num: incompatible dimension for posinf argument: {posinf_dim} != {dim}"
+                )
+        if neginf is not None:
+            neginf, neginf_dim = unwrap(neginf)
+            if neginf_dim != dim:
+                raise DimensionError(
+                    f"in nan_to_num: incompatible dimension for neginf argument: {neginf_dim} != {dim}"
+                )
+        array = op(x, copy, nan, posinf, neginf)
+        return wrap(cls, array, dim)
 
     ## DEFINE OPERATORS
 
