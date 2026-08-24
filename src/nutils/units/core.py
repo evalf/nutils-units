@@ -371,6 +371,30 @@ class Monomial:
         arrays = op(*xi, **kwargs)
         return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
 
+    @__table.register("numpy.nan_to_num")
+    def __nan_to_num(op, x, copy=True, nan=0.0, posinf=None, neginf=None):
+        cls = _get_monomial_class(x, nan, posinf, neginf)
+        x, dim = unwrap(x)
+        nan, nan_dim = unwrap(nan)
+        if nan_dim != dim:
+            raise DimensionError(
+                f"in nan_to_num: incompatible dimension for nan argument: {nan_dim} != {dim}"
+            )
+        if posinf is not None:
+            posinf, posinf_dim = unwrap(posinf)
+            if posinf_dim != dim:
+                raise DimensionError(
+                    f"in nan_to_num: incompatible dimension for posinf argument: {posinf_dim} != {dim}"
+                )
+        if neginf is not None:
+            neginf, neginf_dim = unwrap(neginf)
+            if neginf_dim != dim:
+                raise DimensionError(
+                    f"in nan_to_num: incompatible dimension for neginf argument: {neginf_dim} != {dim}"
+                )
+        array = op(x, copy, nan, posinf, neginf)
+        return wrap(cls, array, dim)
+
     ## DEFINE OPERATORS
 
     __getitem__ = __table.bind_method(operator.getitem)
