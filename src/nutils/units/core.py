@@ -114,10 +114,9 @@ class Monomial:
     @__table.register("_operator.getitem")
     @__table.register("_operator.neg")
     @__table.register("_operator.pos")
-    def __unary(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0])
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
+    def __unary(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("numpy.add")
@@ -128,26 +127,24 @@ class Monomial:
     @__table.register("_operator.add")
     @__table.register("_operator.mod")
     @__table.register("_operator.sub")
-    def __add_like(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0], args[1])
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
+    def __add_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
         if dim0 != dim1:
             raise DimensionError(
                 f"incompatible dimensions for {op.__name__}: {dim0}, {dim1}"
             )
-        val = op(arg0, arg1, *args[2:], **kwargs)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("numpy.matmul")
     @__table.register("numpy.multiply")
     @__table.register("_operator.matmul")
     @__table.register("_operator.mul")
-    def __mul_like(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0], args[1])
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __mul_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 + dim1)
 
     @__table.register("nutils.function.curl")
@@ -156,46 +153,41 @@ class Monomial:
     @__table.register("nutils.function.surfgrad")
     @__table.register("numpy.divide")
     @__table.register("_operator.truediv")
-    def __div_like(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0], args[1])
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __div_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 - dim1)
 
     @__table.register("nutils.function.laplace")
-    def __laplace(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0], args[1])
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __laplace(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 - dim1 * 2)
 
     @__table.register("numpy.sqrt")
-    def __sqrt(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0])
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
+    def __sqrt(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim0 / 2)
 
     @__table.register("_operator.setitem")
-    def __setitem(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0], args[2])
-        arg0, dim0 = unwrap(args[0])
-        arg2, dim2 = unwrap(args[2])
+    def __setitem(cls, op, arg0, arg1, arg2, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg2, dim2 = unwrap(arg2)
         if dim0 != dim2:
             raise DimensionError(f"cannot assign {dim2} to {dim0}")
-        val = op(arg0, args[1], arg2, *args[3:], **kwargs)
+        val = op(arg0, arg1, arg2, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("nutils.function.jacobian")
     @__table.register("numpy.power")
     @__table.register("_operator.pow")
-    def __pow_like(op, *args, **kwargs):
-        cls = _get_monomial_class(args[0])
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
-        return wrap(cls, val, dim0 * args[1])
+    def __pow_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, arg1, *args, **kwargs)
+        return wrap(cls, val, dim0 * arg1)
 
     @__table.register("nutils.function.normal")
     @__table.register("nutils.function.normalized")
@@ -205,9 +197,9 @@ class Monomial:
     @__table.register("numpy.shape")
     @__table.register("numpy.size")
     @__table.register("numpy.argsort")
-    def __unary_op(op, *args, **kwargs):
-        arg0, _ = args[0].unwrap()
-        return op(arg0, *args[1:], **kwargs)
+    def __unary_op(cls, op, arg0, /, *args, **kwargs):
+        arg0, _ = arg0.unwrap()
+        return op(arg0, *args, **kwargs)
 
     @__table.register("numpy.equal")
     @__table.register("numpy.greater")
@@ -221,69 +213,78 @@ class Monomial:
     @__table.register("_operator.le")
     @__table.register("_operator.lt")
     @__table.register("_operator.ne")
-    def __binary_op(op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        if dim0 != dim1 and not (isinstance(args[1], (int, float)) and args[1] == 0):
+    def __binary_op(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        if dim0 != dim1 and not (isinstance(arg1, (int, float)) and arg1 == 0):
             raise DimensionError(
                 f"incompatible dimensions for {op.__name__}: {dim0}, {dim1}"
             )
-        return op(arg0, arg1, *args[2:], **kwargs)
+        return op(arg0, arg1, *args, **kwargs)
 
     @__table.register("numpy.stack")
     @__table.register("numpy.concatenate")
-    def __stack_like(op, *args, **kwargs):
-        cls = _get_monomial_class(*args[0])
-        arg0, dims = zip(*map(unwrap, args[0]))
-        dim = dims[0]
-        if any(d != dim for d in dims[1:]):
-            raise DimensionError(
-                f"incompatible dimensions for {op.__name__}: "
-                + ", ".join(map(str, dims))
-            )
-        val = op(arg0, *args[1:], **kwargs)
+    def __stack_like(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim = unwrap(arg0, maxdepth=1)
+        if not isinstance(dim, Powers):
+            dim, *other_dims = dim
+            for other_dim in other_dims:
+                if other_dim != dim:
+                    raise DimensionError(
+                        f"incompatible dimensions for {op.__name__}: {dim}, {other_dim}"
+                    )
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim)
 
     @__table.register("nutils.function.curvature")
-    def __curvature(op, *args, **kwargs):
-        cls = _get_monomial_class(*args[0])
-        arg0, dim0 = unwrap(args[0])
-        val = op(*args, **kwargs)
+    def __curvature(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, -dim0)
 
     @__table.register("nutils.function.evaluate")
-    def __evaluate(op, *args, **kwargs):
-        cls = _get_monomial_class(*args)
-        args, dims = zip(*map(unwrap, args))
+    def __evaluate(cls, op, *args, **kwargs):
+        args, dims = unwrap(args, mindepth=1, maxdepth=1)
         vals = op(*args, **kwargs)
-        return tuple(wrap(cls, val, dim) for val, dim in zip(vals, dims))
+        return wrap(cls, vals, dims)
+
+    @__table.register("nutils.function.eval")
+    def __eval(cls, op, arg, /, *args, **kwargs):
+        arg, dim = unwrap(arg, maxdepth=-1)
+        val = op(arg, *args, **kwargs)
+        return wrap(cls, val, dim)
+
+    @__table.register("nutils.function.compile")
+    def __compile(cls, op, arg):
+        arg, dim = unwrap(arg, maxdepth=-1)
+        compiled = op(arg)
+        return lambda arguments: wrap(cls, compiled(arguments), dim)
 
     @__table.register("nutils.function.field")
-    def __field(op, *args, **kwargs):
-        cls = _get_monomial_class(*args)
-        args, dims = zip(*map(unwrap, args))
-        val = op(*args, **kwargs)
+    def __field(cls, op, name, /, *args, **kwargs):
+        args, dims = unwrap(args, mindepth=1, maxdepth=1)
+        val = op(name, *args, **kwargs)
         dim = reduce(operator.add, dims)
-        # we abuse the fact that unpack str returns dimensionless
         return wrap(cls, val, dim)
 
     @__table.register("nutils.function.arguments_for")
-    def __attribute(op, *args, **kwargs):
-        args = [unwrap(arg)[0] for arg in args]
+    def __attribute(cls, op, *args, **kwargs):
+        args, _ = unwrap(args, mindepth=1, maxdepth=1)
         return op(*args, **kwargs)
 
     @__table.register("nutils.function.partition")
-    def __partition(op, f, *levels):
+    def __partition(cls, op, f, *levels):
         f, dim = unwrap(f)
-        levels, level_dims = zip(*map(unwrap, levels))
+        levels, level_dims = unwrap(levels, mindepth=1, maxdepth=1)
         for level_dim in level_dims:
             if level_dim != dim:
-                raise DimensionError(f"incompatible dimensions for function.partition: {level_dim} != {dim}")
+                raise DimensionError(
+                    f"incompatible dimensions for function.partition: {level_dim} != {dim}"
+                )
         return op(f, *levels)
 
     @__table.register("numpy.interp")
-    def __interp(op, x, xp, fp, *args, **kwargs):
-        cls = _get_monomial_class(x, xp, fp)
+    def __interp(cls, op, x, xp, fp, *args, **kwargs):
         x, dimx = unwrap(x)
         xp, dimxp = unwrap(xp)
         fp, dimfp = unwrap(fp)
@@ -296,6 +297,7 @@ class Monomial:
 
     @__table.register("nutils.topology.Topology.locate")
     def __locate(
+        cls,
         op,
         topo,
         geom,
@@ -334,15 +336,13 @@ class Monomial:
 
     @__table.register("nutils.sample.Sample.bind")
     @__table.register("nutils.sample.Sample.integral")
-    def __sample(op, sample, func):
-        cls = _get_monomial_class(func)
+    def __sample(cls, op, sample, func):
         func, dim = unwrap(func)
         val = op(sample, func)
         return wrap(cls, val, dim)
 
     @__table.register("numpy.linalg.det")
-    def __det(op, arg):
-        cls = _get_monomial_class(arg)
+    def __det(cls, op, arg):
         arg, dim = unwrap(arg)
         val = op(arg)
         dim = dim * arg.ndim
@@ -350,9 +350,8 @@ class Monomial:
 
     @__table.register("numpy.linspace")
     def __linspace(
-        op, start, stop, num=50, endpoint=True, retstep=False, *args, **kwargs
+        cls, op, start, stop, num=50, endpoint=True, retstep=False, *args, **kwargs
     ):
-        cls = _get_monomial_class(start, stop)
         start, dim = unwrap(start)
         stop, dim_ = unwrap(stop)
         if dim != dim_:
@@ -365,15 +364,13 @@ class Monomial:
             return wrap(cls, samples, dim)
 
     @__table.register("numpy.meshgrid")
-    def __meshgrid(op, *xi, **kwargs):
-        cls = _get_monomial_class(*xi)
-        xi, dims = zip(*map(unwrap, xi))
+    def __meshgrid(cls, op, *xi, **kwargs):
+        xi, dims = unwrap(xi, mindepth=1, maxdepth=1)
         arrays = op(*xi, **kwargs)
         return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
 
     @__table.register("numpy.nan_to_num")
-    def __nan_to_num(op, x, copy=True, nan=0.0, posinf=None, neginf=None):
-        cls = _get_monomial_class(x, nan, posinf, neginf)
+    def __nan_to_num(cls, op, x, copy=True, nan=0.0, posinf=None, neginf=None):
         x, dim = unwrap(x)
         nan, nan_dim = unwrap(nan)
         if nan_dim != dim:
@@ -421,45 +418,50 @@ class Monomial:
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         if method != "__call__":
             return NotImplemented
-        return self.__table.call_or_notimp(ufunc, inputs, kwargs)
+        return self.__table.call_or_notimp(type(self), ufunc, inputs, kwargs)
 
     def __array_function__(self, func, types, args, kwargs):
-        return self.__table.call_or_notimp(func, args, kwargs)
+        return self.__table.call_or_notimp(type(self), func, args, kwargs)
 
-    __nutils_dispatch__ = __table.call_or_notimp
+    @classmethod
+    def __nutils_dispatch__(cls, func, args, kwargs):
+        return cls.__table.call_or_notimp(cls, func, args, kwargs)
 
 
 def wrap(cls, obj, dim):
-    return cls(obj, dim) if dim else obj
+    if not dim:
+        return obj
+    while cls.__init__ is not Monomial.__init__:
+        (cls,) = cls.__bases__
+    if type(dim) in (list, tuple):
+        assert len(dim) == len(obj)
+        wrapped_obj = [
+            wrap(cls, item_obj, item_dim) for item_obj, item_dim in zip(obj, dim)
+        ]
+        if type(dim) is tuple:
+            wrapped_obj = tuple(wrapped_obj)
+    else:
+        wrapped_obj = cls(obj, dim)
+    return wrapped_obj
 
 
-def unwrap(obj):
-    return obj.unwrap() if isinstance(obj, Monomial) else (obj, Powers({}))
-
-
-def _get_monomial_class(*args):
-    """Return common Monomial base class.
-
-    This helper function returns the highest subclass of which all monomial
-    arguments are an instance. Concretely, if one argument is a Monomial and
-    the other a UMonomial, then Monomial is returned. If all are UMonomial then
-    the return value is UMonomial."""
-
-    types = {type(arg) for arg in args if isinstance(arg, Monomial)}
-    bases = _collect_bases(types.pop())
-    for cls in types:
-        bases_ = _collect_bases(cls)
-        while bases != bases_[: len(bases)]:
-            bases = bases[:-1]
-    assert bases[0] is Monomial
-    while bases[-1].__init__ != Monomial.__init__:
-        bases = bases[:-1]
-    return bases[-1]
-
-
-def _collect_bases(cls, sentinel=object):
-    if cls is sentinel:
-        return ()
-    assert issubclass(cls, sentinel)
-    (base,) = cls.__bases__
-    return *_collect_bases(base, sentinel), cls
+def unwrap(obj, mindepth=0, maxdepth=0):
+    # NOTE: maxdepth < 0 implies infinite depth
+    if mindepth > 0 or maxdepth and type(obj) in (list, tuple):
+        unwrapped_obj = []
+        dim = []
+        for item in obj:
+            item_obj, item_dim = unwrap(
+                item, mindepth=mindepth - 1, maxdepth=maxdepth - 1
+            )
+            unwrapped_obj.append(item_obj)
+            dim.append(item_dim)
+        if type(obj) is tuple:
+            unwrapped_obj = tuple(unwrapped_obj)
+            dim = tuple(dim)
+    elif isinstance(obj, Monomial):
+        unwrapped_obj, dim = obj.unwrap()
+    else:
+        unwrapped_obj = obj
+        dim = Powers({})
+    return unwrapped_obj, dim
