@@ -225,13 +225,14 @@ class Monomial:
     @__table.register("numpy.stack")
     @__table.register("numpy.concatenate")
     def __stack_like(cls, op, arg0, /, *args, **kwargs):
-        arg0, dims = zip(*map(unwrap, arg0))
-        dim = dims[0]
-        if any(d != dim for d in dims[1:]):
-            raise DimensionError(
-                f"incompatible dimensions for {op.__name__}: "
-                + ", ".join(map(str, dims))
-            )
+        arg0, dim = unwrap(arg0, maxdepth=1)
+        if not isinstance(dim, Powers):
+            dim, *other_dims = dim
+            for other_dim in other_dims:
+                if other_dim != dim:
+                    raise DimensionError(
+                        f"incompatible dimensions for {op.__name__}: {dim}, {other_dim}"
+                    )
         val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim)
 
@@ -243,27 +244,26 @@ class Monomial:
 
     @__table.register("nutils.function.evaluate")
     def __evaluate(cls, op, *args, **kwargs):
-        args, dims = zip(*map(unwrap, args))
+        args, dims = unwrap(args, mindepth=1, maxdepth=1)
         vals = op(*args, **kwargs)
-        return tuple(wrap(cls, val, dim) for val, dim in zip(vals, dims))
+        return wrap(cls, vals, dims)
 
     @__table.register("nutils.function.field")
-    def __field(cls, op, *args, **kwargs):
-        args, dims = zip(*map(unwrap, args))
-        val = op(*args, **kwargs)
+    def __field(cls, op, name, /, *args, **kwargs):
+        args, dims = unwrap(args, mindepth=1, maxdepth=1)
+        val = op(name, *args, **kwargs)
         dim = reduce(operator.add, dims)
-        # we abuse the fact that unpack str returns dimensionless
         return wrap(cls, val, dim)
 
     @__table.register("nutils.function.arguments_for")
     def __attribute(cls, op, *args, **kwargs):
-        args = [unwrap(arg)[0] for arg in args]
+        args, _ = unwrap(args, mindepth=1, maxdepth=1)
         return op(*args, **kwargs)
 
     @__table.register("nutils.function.partition")
     def __partition(cls, op, f, *levels):
         f, dim = unwrap(f)
-        levels, level_dims = zip(*map(unwrap, levels))
+        levels, level_dims = unwrap(levels, mindepth=1, maxdepth=1)
         for level_dim in level_dims:
             if level_dim != dim:
                 raise DimensionError(
@@ -353,7 +353,7 @@ class Monomial:
 
     @__table.register("numpy.meshgrid")
     def __meshgrid(cls, op, *xi, **kwargs):
-        xi, dims = zip(*map(unwrap, xi))
+        xi, dims = unwrap(xi, mindepth=1, maxdepth=1)
         arrays = op(*xi, **kwargs)
         return tuple(wrap(cls, array, dim) for array, dim in zip(arrays, dims))
 
@@ -421,8 +421,35 @@ def wrap(cls, obj, dim):
         return obj
     while cls.__init__ is not Monomial.__init__:
         (cls,) = cls.__bases__
-    return cls(obj, dim)
+    if type(dim) in (list, tuple):
+        assert len(dim) == len(obj)
+        wrapped_obj = [
+            wrap(cls, item_obj, item_dim) for item_obj, item_dim in zip(obj, dim)
+        ]
+        if type(dim) is tuple:
+            wrapped_obj = tuple(wrapped_obj)
+    else:
+        wrapped_obj = cls(obj, dim)
+    return wrapped_obj
 
 
-def unwrap(obj):
-    return obj.unwrap() if isinstance(obj, Monomial) else (obj, Powers({}))
+def unwrap(obj, mindepth=0, maxdepth=0):
+    # NOTE: maxdepth < 0 implies infinite depth
+    if mindepth > 0 or maxdepth and type(obj) in (list, tuple):
+        unwrapped_obj = []
+        dim = []
+        for item in obj:
+            item_obj, item_dim = unwrap(
+                item, mindepth=mindepth - 1, maxdepth=maxdepth - 1
+            )
+            unwrapped_obj.append(item_obj)
+            dim.append(item_dim)
+        if type(obj) is tuple:
+            unwrapped_obj = tuple(unwrapped_obj)
+            dim = tuple(dim)
+    elif isinstance(obj, Monomial):
+        unwrapped_obj, dim = obj.unwrap()
+    else:
+        unwrapped_obj = obj
+        dim = Powers({})
+    return unwrapped_obj, dim
