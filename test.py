@@ -262,7 +262,7 @@ class UMonomial(TestCase):
         )
         with self.assertRaisesRegex(
             DimensionError,
-            r"incompatible dimensions for stack: M, M, M, T",
+            r"incompatible dimensions for stack: M, T",
         ):
             numpy.stack([A, B, C, D])
 
@@ -275,7 +275,7 @@ class UMonomial(TestCase):
         )
         with self.assertRaisesRegex(
             DimensionError,
-            r"incompatible dimensions for concatenate: M, M, T",
+            r"incompatible dimensions for concatenate: M, T",
         ):
             numpy.concatenate([A, B, C])
 
@@ -363,7 +363,9 @@ class UMonomial(TestCase):
         b = numpy.nan_to_num(a, nan=Length("4m"))
         self.assertEqual(b[0], Length("1.5m"))
         self.assertEqual(b[1], Length("4m"))
-        c = numpy.nan_to_num(a, nan=Length("5m"), posinf=Length("10m"), neginf=Length("-8m"))
+        c = numpy.nan_to_num(
+            a, nan=Length("5m"), posinf=Length("10m"), neginf=Length("-8m")
+        )
         self.assertEqual(c[1], Length("5m"))
         self.assertEqual(c[2], Length("10m"))
         self.assertEqual(c[3], Length("-8m"))
