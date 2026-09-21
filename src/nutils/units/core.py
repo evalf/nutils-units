@@ -114,9 +114,9 @@ class Monomial:
     @__table.register("_operator.getitem")
     @__table.register("_operator.neg")
     @__table.register("_operator.pos")
-    def __unary(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
+    def __unary(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("numpy.add")
@@ -127,24 +127,24 @@ class Monomial:
     @__table.register("_operator.add")
     @__table.register("_operator.mod")
     @__table.register("_operator.sub")
-    def __add_like(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
+    def __add_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
         if dim0 != dim1:
             raise DimensionError(
                 f"incompatible dimensions for {op.__name__}: {dim0}, {dim1}"
             )
-        val = op(arg0, arg1, *args[2:], **kwargs)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("numpy.matmul")
     @__table.register("numpy.multiply")
     @__table.register("_operator.matmul")
     @__table.register("_operator.mul")
-    def __mul_like(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __mul_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 + dim1)
 
     @__table.register("nutils.function.curl")
@@ -153,41 +153,41 @@ class Monomial:
     @__table.register("nutils.function.surfgrad")
     @__table.register("numpy.divide")
     @__table.register("_operator.truediv")
-    def __div_like(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __div_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 - dim1)
 
     @__table.register("nutils.function.laplace")
-    def __laplace(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        val = op(arg0, arg1, *args[2:], **kwargs)
+    def __laplace(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        val = op(arg0, arg1, *args, **kwargs)
         return wrap(cls, val, dim0 - dim1 * 2)
 
     @__table.register("numpy.sqrt")
-    def __sqrt(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
+    def __sqrt(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim0 / 2)
 
     @__table.register("_operator.setitem")
-    def __setitem(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg2, dim2 = unwrap(args[2])
+    def __setitem(cls, op, arg0, arg1, arg2, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg2, dim2 = unwrap(arg2)
         if dim0 != dim2:
             raise DimensionError(f"cannot assign {dim2} to {dim0}")
-        val = op(arg0, args[1], arg2, *args[3:], **kwargs)
+        val = op(arg0, arg1, arg2, *args, **kwargs)
         return wrap(cls, val, dim0)
 
     @__table.register("nutils.function.jacobian")
     @__table.register("numpy.power")
     @__table.register("_operator.pow")
-    def __pow_like(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        val = op(arg0, *args[1:], **kwargs)
-        return wrap(cls, val, dim0 * args[1])
+    def __pow_like(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, arg1, *args, **kwargs)
+        return wrap(cls, val, dim0 * arg1)
 
     @__table.register("nutils.function.normal")
     @__table.register("nutils.function.normalized")
@@ -197,9 +197,9 @@ class Monomial:
     @__table.register("numpy.shape")
     @__table.register("numpy.size")
     @__table.register("numpy.argsort")
-    def __unary_op(cls, op, *args, **kwargs):
-        arg0, _ = args[0].unwrap()
-        return op(arg0, *args[1:], **kwargs)
+    def __unary_op(cls, op, arg0, /, *args, **kwargs):
+        arg0, _ = arg0.unwrap()
+        return op(arg0, *args, **kwargs)
 
     @__table.register("numpy.equal")
     @__table.register("numpy.greater")
@@ -213,32 +213,32 @@ class Monomial:
     @__table.register("_operator.le")
     @__table.register("_operator.lt")
     @__table.register("_operator.ne")
-    def __binary_op(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        arg1, dim1 = unwrap(args[1])
-        if dim0 != dim1 and not (isinstance(args[1], (int, float)) and args[1] == 0):
+    def __binary_op(cls, op, arg0, arg1, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        arg1, dim1 = unwrap(arg1)
+        if dim0 != dim1 and not (isinstance(arg1, (int, float)) and arg1 == 0):
             raise DimensionError(
                 f"incompatible dimensions for {op.__name__}: {dim0}, {dim1}"
             )
-        return op(arg0, arg1, *args[2:], **kwargs)
+        return op(arg0, arg1, *args, **kwargs)
 
     @__table.register("numpy.stack")
     @__table.register("numpy.concatenate")
-    def __stack_like(cls, op, *args, **kwargs):
-        arg0, dims = zip(*map(unwrap, args[0]))
+    def __stack_like(cls, op, arg0, /, *args, **kwargs):
+        arg0, dims = zip(*map(unwrap, arg0))
         dim = dims[0]
         if any(d != dim for d in dims[1:]):
             raise DimensionError(
                 f"incompatible dimensions for {op.__name__}: "
                 + ", ".join(map(str, dims))
             )
-        val = op(arg0, *args[1:], **kwargs)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, dim)
 
     @__table.register("nutils.function.curvature")
-    def __curvature(cls, op, *args, **kwargs):
-        arg0, dim0 = unwrap(args[0])
-        val = op(*args, **kwargs)
+    def __curvature(cls, op, arg0, /, *args, **kwargs):
+        arg0, dim0 = unwrap(arg0)
+        val = op(arg0, *args, **kwargs)
         return wrap(cls, val, -dim0)
 
     @__table.register("nutils.function.evaluate")
