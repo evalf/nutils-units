@@ -248,6 +248,12 @@ class Monomial:
         vals = op(*args, **kwargs)
         return wrap(cls, vals, dims)
 
+    @__table.register("nutils.function.compile")
+    def __compile(cls, op, arg):
+        arg, dim = unwrap(arg, maxdepth=-1)
+        compiled = op(arg)
+        return lambda arguments: wrap(cls, compiled(arguments), dim)
+
     @__table.register("nutils.function.field")
     def __field(cls, op, name, /, *args, **kwargs):
         args, dims = unwrap(args, mindepth=1, maxdepth=1)
