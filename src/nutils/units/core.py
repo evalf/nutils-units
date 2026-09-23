@@ -197,6 +197,8 @@ class Monomial:
     @__table.register("numpy.shape")
     @__table.register("numpy.size")
     @__table.register("numpy.argsort")
+    @__table.register("numpy.argmin")
+    @__table.register("numpy.argmax")
     def __unary_op(cls, op, arg0, /, *args, **kwargs):
         arg0, _ = arg0.unwrap()
         return op(arg0, *args, **kwargs)
