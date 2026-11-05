@@ -110,6 +110,7 @@ class Monomial:
     @__table.register("numpy.take")
     @__table.register("numpy.trace")
     @__table.register("numpy.transpose")
+    @__table.register("numpy.diff")
     @__table.register("_operator.abs")
     @__table.register("_operator.getitem")
     @__table.register("_operator.neg")
