@@ -8,47 +8,63 @@ class DispatchTable(dict):
     The dispatch table is a dictionary that maps the fully qualified name of a
     callable to a handler function that should be called with the callable as
     the first positional argument, followed by its arguments. Handlers are
-    registered via the .register method:
+    registered by the fully qualified domain name via the .register method:
 
     >>> dispatch_table = DispatchTable()
-    >>> @dispatch_table.register("math.sqrt")
-    ... def handle_root(op, x):
-    ...     return str(op(float(x)))
+    >>> @dispatch_table.register("_operator.pow")
+    ... def handle_pow(cls, func, x, y):
+    ...     if not isinstance(x, cls) or not isinstance(y, cls):
+    ...         return NotImplemented
+    ...     return cls(func(float(x), float(y)))
 
-    In this (rather contrived) example we create a handler that extends the
-    math.sqrt function to operate on string arguments. To obtain the relevant
-    handler we use the .bind method:
+    In this (rather contrived) example we created a handler that extends the
+    power operator to operate on string arguments. To obtain the relevant
+    handler we use the .bind_method method:
 
-    >>> import math
-    >>> f = dispatch_table.bind(math.sqrt)
-    >>> f("4")
-    '2.0'
+    >>> import operator
+    >>> class MyStringType(str):
+    ...     __pow__ = dispatch_table.bind_method(operator.pow)
+    >>> MyStringType("5") ** MyStringType("2")
+    '25.0'
 
     Note that by registering the fully qualified name of the callable, rather
     than the callable itself, we are able to prepare a table for any number of
     external functions without ever importing any third party modules.
     """
 
-    def register(self, qualname):
-        return partial(_setitem_retvalue, self, qualname)
+    def register(self, qualname, func=None):
+        if func is None:
+            return partial(self.register, qualname)
+        self[qualname] = func
+        return func
 
-    def bind(self, func):
-        return partial(self[get_qualname(func)], func)
+    @staticmethod
+    def _bind_method(self, handler, func, *args, **kwargs):
+        # NOTE: `self` refers to the method's owner, not DispatchTable
+        return handler(type(self), func, self, *args, **kwargs)
 
     def bind_method(self, func):
-        return partialmethod(self.bind(func))
+        handler = self[get_qualname(func)]
+        return partialmethod(self._bind_method, handler, func)
+
+    @staticmethod
+    def _bind_reverse(self, handler, func, other, **kwargs):
+        # NOTE: `self` refers to the method's owner, not DispatchTable
+        return handler(type(self), func, other, self, **kwargs)
 
     def bind_method_and_reverse(self, func):
-        bound = self.bind(func)
-        return partialmethod(bound), partialmethod(_swap, bound)
+        handler = self[get_qualname(func)]
+        return partialmethod(self._bind_method, handler, func), partialmethod(
+            self._bind_reverse, handler, func
+        )
 
-    def call_or_notimp(self, func, args, kwargs):
+    def call_or_notimp(self, cls, func, args, kwargs):
         try:
-            bound = self.bind(func)
+            handler = self[get_qualname(func)]
         except KeyError:
             return NotImplemented
         else:
-            return bound(*args, **kwargs)
+            return handler(cls, func, *args, **kwargs)
 
 
 def get_qualname(func):
@@ -59,12 +75,3 @@ def get_qualname(func):
     """
 
     return getmodule(func).__name__ + "." + func.__qualname__
-
-
-def _setitem_retvalue(d, k, v):
-    d[k] = v
-    return v
-
-
-def _swap(self, func, arg):
-    return func(arg, self)
